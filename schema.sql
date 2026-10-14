@@ -1,5 +1,5 @@
 CREATE TABLE pemohon (
-    id_pemohon INT PRIMARY KEY AUTO_INCREMENT,
+    id_pemohon SERIAL PRIMARY KEY,
     nik VARCHAR(16) NOT NULL,
     no_kk VARCHAR(16) NOT NULL,
     nama_lengkap VARCHAR(100) NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE pemohon (
 );
 
 CREATE TABLE pegawai (
-    id_pegawai INT PRIMARY KEY AUTO_INCREMENT,
+    id_pegawai SERIAL PRIMARY KEY,
     nip VARCHAR(20) NOT NULL,
     nama_pegawai VARCHAR(100) NOT NULL,
     jabatan VARCHAR(50) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE pegawai (
 );
 
 CREATE TABLE jenis_layanan (
-    id_layanan INT PRIMARY KEY AUTO_INCREMENT,
+    id_layanan SERIAL PRIMARY KEY,
     no_dokumen_sp VARCHAR(50) NOT NULL,
     nama_layanan VARCHAR(150) NOT NULL,
     jangka_waktu VARCHAR(50),
@@ -25,7 +25,7 @@ CREATE TABLE jenis_layanan (
 );
 
 CREATE TABLE daftar_persyarat (
-    id_syarat INT PRIMARY KEY AUTO_INCREMENT,
+    id_syarat SERIAL PRIMARY KEY,
     id_layanan INT NOT NULL,
     nama_persyaratan VARCHAR(255) NOT NULL,
     keterangan_tambahan VARCHAR(100),
@@ -33,14 +33,14 @@ CREATE TABLE daftar_persyarat (
 );
 
 CREATE TABLE permohonan (
-    id_permohonan INT PRIMARY KEY AUTO_INCREMENT,
+    id_permohonan SERIAL PRIMARY KEY,
     id_pemohon INT NOT NULL,
     id_layanan INT NOT NULL,
     id_petugas INT,
     id_kasi INT,
     id_camat INT,
     no_registrasi VARCHAR(50),
-    tgl_pengajuan DATETIME,
+    tgl_pengajuan TIMESTAMP,
     status_berkas VARCHAR(50),
     status_paraf_kasi BOOLEAN,
     status_ttd_camat BOOLEAN,
@@ -53,7 +53,7 @@ CREATE TABLE permohonan (
 );
 
 CREATE TABLE berkas_permohonan (
-    id_berkas INT PRIMARY KEY AUTO_INCREMENT,
+    id_berkas SERIAL PRIMARY KEY,
     id_permohonan INT NOT NULL,
     id_syarat INT NOT NULL,
     file_dokumen VARCHAR(255),
