@@ -107,17 +107,6 @@ CREATE TABLE demografi_penduduk (
     FOREIGN KEY (id_kelurahan) REFERENCES kelurahan(id_kelurahan)
 );
 
-CREATE TABLE fasilitas_umum (
-    id_fasilitas SERIAL PRIMARY KEY,
-    id_kelurahan INT NOT NULL,
-    nama_fasilitas VARCHAR(150) NOT NULL,
-    kategori_fasilitas VARCHAR(50) NOT NULL,
-    alamat VARCHAR(255),
-    latitude DECIMAL(10, 8),
-    longitude DECIMAL(11, 8),
-    FOREIGN KEY (id_kelurahan) REFERENCES kelurahan(id_kelurahan)
-);
-
 -- ========================================================
 -- 5. MODUL ASPIRASI & PENGADUAN SP4N-LAPOR! (Modul 5)
 -- ========================================================
@@ -155,9 +144,11 @@ CREATE TABLE berita_agenda (
 
 CREATE TABLE dokumen_ppid (
     id_dokumen SERIAL PRIMARY KEY,
+    id_petugas INT NOT NULL,
     judul_dokumen VARCHAR(255) NOT NULL,
     kategori_ppid VARCHAR(50) NOT NULL,
     file_url VARCHAR(255) NOT NULL,
     tahun INT,
-    tgl_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    tgl_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_petugas) REFERENCES users(id_user)
 );
