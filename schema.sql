@@ -19,6 +19,7 @@ CREATE TABLE jenis_layanan (
     id_layanan SERIAL PRIMARY KEY,
     no_dokumen_sp VARCHAR(50) NOT NULL,
     nama_layanan VARCHAR(150) NOT NULL,
+    dasar_hukum TEXT,
     jangka_waktu VARCHAR(50),
     biaya VARCHAR(20),
     produk_pelayanan VARCHAR(100) NOT NULL
@@ -60,4 +61,51 @@ CREATE TABLE berkas_permohonan (
     status_verifikasi VARCHAR(50),
     FOREIGN KEY (id_permohonan) REFERENCES permohonan(id_permohonan),
     FOREIGN KEY (id_syarat) REFERENCES daftar_persyarat(id_syarat)
+);
+
+-- ========================================================
+-- MODUL DEMOGRAFI & WILAYAH (KECAMATAN TARAKAN TIMUR)
+-- ========================================================
+
+CREATE TABLE kelurahan (
+    id_kelurahan SERIAL PRIMARY KEY,
+    nama_kelurahan VARCHAR(100) NOT NULL,
+    luas_wilayah DECIMAL(8, 2),
+    jumlah_rt INT DEFAULT 0,
+    jumlah_rw INT DEFAULT 0
+);
+
+CREATE TABLE demografi_penduduk (
+    id_demografi SERIAL PRIMARY KEY,
+    id_kelurahan INT NOT NULL,
+    tahun INT NOT NULL,
+    jumlah_laki_laki INT DEFAULT 0,
+    jumlah_perempuan INT DEFAULT 0,
+    jumlah_penduduk INT DEFAULT 0,
+    jumlah_kk INT DEFAULT 0,
+    FOREIGN KEY (id_kelurahan) REFERENCES kelurahan(id_kelurahan)
+);
+
+-- ========================================================
+-- MODUL PORTAL INFORMASI & ASPIRASI WARGA
+-- ========================================================
+
+CREATE TABLE berita_kegiatan (
+    id_berita SERIAL PRIMARY KEY,
+    id_pegawai INT NOT NULL,
+    judul VARCHAR(255) NOT NULL,
+    konten TEXT NOT NULL,
+    gambar_thumbnail VARCHAR(255),
+    tgl_publikasi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_pegawai) REFERENCES pegawai(id_pegawai)
+);
+
+CREATE TABLE pengaduan_masyarakat (
+    id_pengaduan SERIAL PRIMARY KEY,
+    id_pemohon INT NOT NULL,
+    judul_laporan VARCHAR(200) NOT NULL,
+    isi_laporan TEXT NOT NULL,
+    status_laporan VARCHAR(50) DEFAULT 'Menunggu Tanggapan',
+    tgl_laporan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_pemohon) REFERENCES pemohon(id_pemohon)
 );
