@@ -1,70 +1,89 @@
-CREATE TABLE pemohon (
-    id_pemohon SERIAL PRIMARY KEY,
-    nik VARCHAR(16) NOT NULL,
-    no_kk VARCHAR(16) NOT NULL,
+-- ========================================================
+-- SISTEM INFORMASI PELAYANAN PUBLIK KECAMATAN TARAKAN TIMUR
+-- Berdasarkan Proposal Inovasi & Arahan Dosen Pembimbing
+-- Kompatibel penuh dengan Liam ERD & PostgreSQL/MySQL
+-- ========================================================
+
+-- ========================================================
+-- 1. MODUL AUTENTIKASI & PENGGUNA (Revisi Proposal Hal 11)
+-- ========================================================
+
+CREATE TABLE users (
+    id_user SERIAL PRIMARY KEY,
+    nik VARCHAR(16) UNIQUE,
     nama_lengkap VARCHAR(100) NOT NULL,
-    alamat TEXT NOT NULL,
-    no_hp VARCHAR(15) NOT NULL
-);
-
-CREATE TABLE pegawai (
-    id_pegawai SERIAL PRIMARY KEY,
-    nip VARCHAR(20) NOT NULL,
-    nama_pegawai VARCHAR(100) NOT NULL,
-    jabatan VARCHAR(50) NOT NULL,
-    pangkat_golongan VARCHAR(50)
-);
-
-CREATE TABLE jenis_layanan (
-    id_layanan SERIAL PRIMARY KEY,
-    no_dokumen_sp VARCHAR(50) NOT NULL,
-    nama_layanan VARCHAR(150) NOT NULL,
-    dasar_hukum TEXT,
-    jangka_waktu VARCHAR(50),
-    biaya VARCHAR(20),
-    produk_pelayanan VARCHAR(100) NOT NULL
-);
-
-CREATE TABLE daftar_persyarat (
-    id_syarat SERIAL PRIMARY KEY,
-    id_layanan INT NOT NULL,
-    nama_persyaratan VARCHAR(255) NOT NULL,
-    keterangan_tambahan VARCHAR(100),
-    FOREIGN KEY (id_layanan) REFERENCES jenis_layanan(id_layanan)
-);
-
-CREATE TABLE permohonan (
-    id_permohonan SERIAL PRIMARY KEY,
-    id_pemohon INT NOT NULL,
-    id_layanan INT NOT NULL,
-    id_petugas INT,
-    id_kasi INT,
-    id_camat INT,
-    no_registrasi VARCHAR(50),
-    tgl_pengajuan TIMESTAMP,
-    status_berkas VARCHAR(50),
-    status_paraf_kasi BOOLEAN,
-    status_ttd_camat BOOLEAN,
-    tgl_selesai DATE,
-    FOREIGN KEY (id_pemohon) REFERENCES pemohon(id_pemohon),
-    FOREIGN KEY (id_layanan) REFERENCES jenis_layanan(id_layanan),
-    FOREIGN KEY (id_petugas) REFERENCES pegawai(id_pegawai),
-    FOREIGN KEY (id_kasi) REFERENCES pegawai(id_pegawai),
-    FOREIGN KEY (id_camat) REFERENCES pegawai(id_pegawai)
-);
-
-CREATE TABLE berkas_permohonan (
-    id_berkas SERIAL PRIMARY KEY,
-    id_permohonan INT NOT NULL,
-    id_syarat INT NOT NULL,
-    file_dokumen VARCHAR(255),
-    status_verifikasi VARCHAR(50),
-    FOREIGN KEY (id_permohonan) REFERENCES permohonan(id_permohonan),
-    FOREIGN KEY (id_syarat) REFERENCES daftar_persyarat(id_syarat)
+    email VARCHAR(100) UNIQUE NOT NULL,
+    no_hp VARCHAR(20) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(20) NOT NULL, -- 'warga', 'admin_pelayanan', 'kasi', 'camat', 'superadmin'
+    seksi_jabatan VARCHAR(50), -- Khusus Kasi: 'Pemerintahan', 'Kesra', 'Trantib', 'Ekonomi'
+    alamat TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========================================================
--- MODUL DEMOGRAFI & WILAYAH (KECAMATAN TARAKAN TIMUR)
+-- 2. MODUL MASTER LAYANAN & PERSYARATAN (Modul 4)
+-- Menampung semua 9 atau 22 layanan (SKTM, Hak Milik Kapal, dll)
+-- ========================================================
+
+CREATE TABLE jenis_layanan (
+    id_layanan SERIAL PRIMARY KEY,
+    nama_layanan VARCHAR(150) NOT NULL,
+    seksi VARCHAR(50) NOT NULL, -- 'Pemerintahan', 'Kesra', 'Trantib', 'Ekonomi'
+    dasar_hukum TEXT,
+    jangka_waktu VARCHAR(50) DEFAULT '1 hari kerja',
+    biaya VARCHAR(20) DEFAULT 'Gratis',
+    output_dokumen VARCHAR(100) NOT NULL,
+    deskripsi TEXT
+);
+
+CREATE TABLE daftar_persyaratan (
+    id_syarat SERIAL PRIMARY KEY,
+    id_layanan INT NOT NULL,
+    nama_syarat VARCHAR(255) NOT NULL,
+    wajib BOOLEAN DEFAULT TRUE,
+    keterangan VARCHAR(255),
+    FOREIGN KEY (id_layanan) REFERENCES jenis_layanan(id_layanan) ON DELETE CASCADE
+);
+
+-- ========================================================
+-- 3. MODUL TRANSAKSI PELAYANAN & TTE BARCODE (Modul 4)
+-- ========================================================
+
+CREATE TABLE pengajuan_pelayanan (
+    id_pengajuan SERIAL PRIMARY KEY,
+    no_registrasi VARCHAR(50) UNIQUE NOT NULL,
+    id_user INT NOT NULL,
+    id_layanan INT NOT NULL,
+    tgl_pengajuan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status_pengajuan VARCHAR(50) DEFAULT 'Diajukan', 
+    catatan_revisi TEXT,
+    qr_code_tte VARCHAR(255),
+    file_surat_selesai VARCHAR(255),
+    id_verifikator INT,
+    id_kasi INT,
+    id_camat INT,
+    tgl_selesai TIMESTAMP,
+    FOREIGN KEY (id_user) REFERENCES users(id_user),
+    FOREIGN KEY (id_layanan) REFERENCES jenis_layanan(id_layanan),
+    FOREIGN KEY (id_verifikator) REFERENCES users(id_user),
+    FOREIGN KEY (id_kasi) REFERENCES users(id_user),
+    FOREIGN KEY (id_camat) REFERENCES users(id_user)
+);
+
+CREATE TABLE berkas_pengajuan (
+    id_berkas SERIAL PRIMARY KEY,
+    id_pengajuan INT NOT NULL,
+    id_syarat INT NOT NULL,
+    file_url VARCHAR(255) NOT NULL,
+    status_berkas VARCHAR(50) DEFAULT 'Menunggu Verifikasi',
+    catatan_admin VARCHAR(255),
+    FOREIGN KEY (id_pengajuan) REFERENCES pengajuan_pelayanan(id_pengajuan) ON DELETE CASCADE,
+    FOREIGN KEY (id_syarat) REFERENCES daftar_persyaratan(id_syarat)
+);
+
+-- ========================================================
+-- 4. MODUL DEMOGRAFI, MONOGRAFI & DESA CANTIK (Modul 6)
 -- ========================================================
 
 CREATE TABLE kelurahan (
@@ -72,7 +91,9 @@ CREATE TABLE kelurahan (
     nama_kelurahan VARCHAR(100) NOT NULL,
     luas_wilayah DECIMAL(8, 2),
     jumlah_rt INT DEFAULT 0,
-    jumlah_rw INT DEFAULT 0
+    jumlah_rw INT DEFAULT 0,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8)
 );
 
 CREATE TABLE demografi_penduduk (
@@ -86,26 +107,57 @@ CREATE TABLE demografi_penduduk (
     FOREIGN KEY (id_kelurahan) REFERENCES kelurahan(id_kelurahan)
 );
 
--- ========================================================
--- MODUL PORTAL INFORMASI & ASPIRASI WARGA
--- ========================================================
-
-CREATE TABLE berita_kegiatan (
-    id_berita SERIAL PRIMARY KEY,
-    id_pegawai INT NOT NULL,
-    judul VARCHAR(255) NOT NULL,
-    konten TEXT NOT NULL,
-    gambar_thumbnail VARCHAR(255),
-    tgl_publikasi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_pegawai) REFERENCES pegawai(id_pegawai)
+CREATE TABLE fasilitas_umum (
+    id_fasilitas SERIAL PRIMARY KEY,
+    id_kelurahan INT NOT NULL,
+    nama_fasilitas VARCHAR(150) NOT NULL,
+    kategori_fasilitas VARCHAR(50) NOT NULL,
+    alamat VARCHAR(255),
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    FOREIGN KEY (id_kelurahan) REFERENCES kelurahan(id_kelurahan)
 );
+
+-- ========================================================
+-- 5. MODUL ASPIRASI & PENGADUAN SP4N-LAPOR! (Modul 5)
+-- ========================================================
 
 CREATE TABLE pengaduan_masyarakat (
     id_pengaduan SERIAL PRIMARY KEY,
-    id_pemohon INT NOT NULL,
+    id_user INT NOT NULL,
     judul_laporan VARCHAR(200) NOT NULL,
     isi_laporan TEXT NOT NULL,
+    kategori VARCHAR(50),
     status_laporan VARCHAR(50) DEFAULT 'Menunggu Tanggapan',
+    tanggapan TEXT,
+    id_petugas_tanggapan INT,
     tgl_laporan TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_pemohon) REFERENCES pemohon(id_pemohon)
+    FOREIGN KEY (id_user) REFERENCES users(id_user),
+    FOREIGN KEY (id_petugas_tanggapan) REFERENCES users(id_user)
+);
+
+-- ========================================================
+-- 6. MODUL INFORMASI PUBLIK, AGENDA & PPID (Modul 1, 2, 7)
+-- ========================================================
+
+CREATE TABLE berita_agenda (
+    id_konten SERIAL PRIMARY KEY,
+    id_penulis INT NOT NULL,
+    tipe_konten VARCHAR(20) NOT NULL,
+    judul VARCHAR(255) NOT NULL,
+    isi TEXT NOT NULL,
+    gambar_thumbnail VARCHAR(255),
+    tgl_kegiatan TIMESTAMP,
+    lokasi_kegiatan VARCHAR(255),
+    tgl_publikasi TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_penulis) REFERENCES users(id_user)
+);
+
+CREATE TABLE dokumen_ppid (
+    id_dokumen SERIAL PRIMARY KEY,
+    judul_dokumen VARCHAR(255) NOT NULL,
+    kategori_ppid VARCHAR(50) NOT NULL,
+    file_url VARCHAR(255) NOT NULL,
+    tahun INT,
+    tgl_upload TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
