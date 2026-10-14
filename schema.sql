@@ -83,7 +83,7 @@ CREATE TABLE berkas_pengajuan (
 );
 
 -- ========================================================
--- 4. MODUL DEMOGRAFI, MONOGRAFI & DESA CANTIK (Modul 6)
+-- 4. MODUL DATA DEMOGRAFI & MONOGRAFI KELURAHAN (Modul 6)
 -- ========================================================
 
 CREATE TABLE kelurahan (
